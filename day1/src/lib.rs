@@ -1,8 +1,36 @@
+use std::{fmt::Display, iter};
+
 #[derive(Debug)]
 pub struct Node {
     char: char,
     nodes: Vec<Node>,
     value: Option<u8>,
+}
+
+fn write_nodes<'a>(
+    nodes: impl Iterator<Item = &'a Node>,
+    f: &mut std::fmt::Formatter<'_>,
+) -> std::fmt::Result {
+    let children: Vec<_> = nodes
+        .flat_map(|node| {
+            write!(f, "{}", node.char).unwrap();
+            node.nodes.iter()
+        })
+        .collect();
+
+    if !children.is_empty() {
+        writeln!(f)?;
+        write_nodes(children.into_iter(), f)
+    } else {
+        Ok(())
+    }
+}
+
+impl Display for Node {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let nodes = iter::once(self);
+        write_nodes(nodes, f)
+    }
 }
 
 impl Default for Node {
@@ -34,6 +62,10 @@ impl From<char> for Node {
 impl Node {
     pub fn is_root(&self) -> bool {
         self.char == '*'
+    }
+
+    pub fn is_leaf(&self) -> bool {
+        self.value.is_some()
     }
     pub fn new_tree<'a>(words: impl IntoIterator<Item = (&'a str, u8)>) -> Node {
         let mut root = Node::default();

@@ -1,5 +1,3 @@
-
-
 use day1::{Find, Node};
 use once_cell::sync::Lazy;
 
@@ -16,7 +14,7 @@ fn simple_row2value(line: &str) -> u32 {
 fn part1(input: &str) -> u32 {
     let lines = input.lines();
     let values = lines.map(simple_row2value);
-    
+
     values.sum()
 }
 
@@ -33,7 +31,8 @@ static REV_TREE: Lazy<Node> = Lazy::new(|| {
     ];
     let reverse: [String; 9] = words.map(|word| word.chars().rev().collect());
     let reverse = reverse.iter().map(|word| (word.as_str()));
-    Node::new_tree(reverse.zip(1..10))
+    let tree = Node::new_tree(reverse.zip(1..10));
+    tree
 });
 
 fn find_digit(chars: &mut impl Iterator<Item = char>, tree: &Node) -> Option<u32> {
@@ -55,7 +54,6 @@ fn decend<'a>(node: &'a Node, c: char, root: &'a Node) -> Find<'a> {
     match node.decend(c) {
         a @ Find::Complete(_) | a @ Find::Partial(_) => a,
         Find::NoMatch => {
-            // println! {"debugging 58 {c} {:#?}", node};
             if node.is_root() {
                 return Find::NoMatch;
             }
@@ -70,10 +68,7 @@ fn row2value(line: &str) -> u32 {
     let find = find_digit(&mut rev, &REV_TREE);
     let last = match find {
         Some(v) => v,
-        None => {
-            "nothing found from rev, falling back to first";
-            first
-        }
+        None => first,
     };
 
     first * 10 + last
@@ -82,7 +77,7 @@ fn row2value(line: &str) -> u32 {
 fn part2(input: &str) -> u32 {
     let lines = input.lines();
     let values = lines.map(row2value);
-    
+
     values.sum()
 }
 
@@ -94,7 +89,7 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    use crate::{part1, part2, row2value};
+    use crate::{find_digit, part1, row2value, REV_TREE, TREE};
 
     #[test]
     fn test1() {
@@ -106,16 +101,51 @@ mod tests {
 
     #[test]
     fn test2() {
-        let input = "two1nine\neightwothree\nabcone2threexyz\nxtwone3four\n4nineeightseven2\nzoneight234\n7pqrstsixteen";
-        let expected: u32 = 281;
-        let res = part2(input);
-        assert_eq!(expected, res);
+        let input = "two1ninez\neightwothree\nabcone2threexyz\nxtwone3four\n4nineeightseven2\nzoneight234\n7pqrstsixteen\n";
+        let expected = vec![29, 83, 13, 24, 42, 14, 76];
+        let res = input.lines().map(row2value);
+        for (exp, res) in res.zip(expected) {
+            assert_eq!(exp, res);
+        }
     }
     #[test]
     fn test3() {
-        let input = "seven5pqrstsixteen";
-        let expected: u32 = 76;
+        let input = "1321";
+        let expected: u32 = 11;
         let res = row2value(input);
         assert_eq!(expected, res);
+    }
+    const NUMBERS: [&str; 9] = [
+        "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+    ];
+
+    fn parse_digit_end(str: &str) -> Option<u32> {
+        for (i, n) in NUMBERS.iter().enumerate() {
+            if str.ends_with(n) {
+                return Some(i as u32 + 1);
+            }
+        }
+        None
+    }
+
+    fn parse_digit_start(str: &str) -> Option<u32> {
+        for (i, n) in NUMBERS.iter().enumerate() {
+            if str.starts_with(n) {
+                return Some(i as u32 + 1);
+            }
+        }
+        None
+    }
+    fn test5() {
+        let input = include_str!("input.txt");
+        for row in input.lines() {
+            let exp_front = parse_digit_start(row);
+            let res_front = find_digit(&mut row.chars(), &TREE);
+            assert_eq!(exp_front, res_front);
+
+            let exp_back = parse_digit_end(row);
+            let res_back = find_digit(&mut row.chars().rev(), &REV_TREE);
+            assert_eq!(exp_back, res_back);
+        }
     }
 }
