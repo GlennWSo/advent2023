@@ -42,7 +42,7 @@ fn find_digit(chars: &mut impl Iterator<Item = char>, tree: &Node) -> Option<u32
         if let Some(v) = c.to_digit(10) {
             return Some(v);
         };
-        match dbg!(decend(node, dbg!(c), tree)) {
+        match decend(node, c, tree) {
             Find::Complete(v) => return Some(v as u32),
             Find::Partial(inner_node) => node = inner_node,
             Find::NoMatch => node = tree,
@@ -66,12 +66,12 @@ fn decend<'a>(node: &'a Node, c: char, root: &'a Node) -> Find<'a> {
 fn row2value(line: &str) -> u32 {
     let mut chars = line.chars();
     let first = find_digit(&mut chars, &TREE).expect("each line should have atleast one value");
-    let mut rev = dbg!(chars.rev());
+    let mut rev = chars.rev();
     let find = find_digit(&mut rev, &REV_TREE);
     let last = match find {
         Some(v) => v,
         None => {
-            dbg!("nothing found from rev, falling back to first");
+            "nothing found from rev, falling back to first";
             first
         }
     };
