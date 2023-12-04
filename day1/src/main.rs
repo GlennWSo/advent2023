@@ -1,16 +1,18 @@
 fn part1(input: &str) -> u32 {
     let lines = input.lines();
-    let values = lines.map(|line| {
-        let mut numbers = line.chars().filter(|c| c.is_digit(10));
-        let first = numbers.next().unwrap().to_digit(10).unwrap();
-        let last = match numbers.last() {
-            Some(c) => c.to_digit(10).unwrap(),
-            None => first,
-        };
-        first * 10 + last
-    });
+    let values = lines.map(|line| row2value(line));
     let res = values.sum();
     res
+}
+
+fn row2value(line: &str) -> u32 {
+    let mut numbers = line.chars().filter(|c| c.is_digit(10));
+    let first = numbers.next().unwrap().to_digit(10).unwrap();
+    let last = match numbers.last() {
+        Some(c) => c.to_digit(10).unwrap(),
+        None => first,
+    };
+    first * 10 + last
 }
 fn main() {
     let input = include_str!("input.txt");
