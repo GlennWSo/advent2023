@@ -1,12 +1,12 @@
-use std::iter;
+
 
 use day1::{Find, Node};
 use once_cell::sync::Lazy;
 
 fn simple_row2value(line: &str) -> u32 {
-    let mut numbers = line.chars().filter(|c| c.is_digit(10));
+    let mut numbers = line.chars().filter(|c| c.is_ascii_digit());
     let first = numbers.next().unwrap().to_digit(10).unwrap();
-    let last = match numbers.rev().next() {
+    let last = match numbers.next_back() {
         Some(c) => c.to_digit(10).unwrap(),
         None => first,
     };
@@ -15,9 +15,9 @@ fn simple_row2value(line: &str) -> u32 {
 
 fn part1(input: &str) -> u32 {
     let lines = input.lines();
-    let values = lines.map(|line| simple_row2value(line));
-    let res = values.sum();
-    res
+    let values = lines.map(simple_row2value);
+    
+    values.sum()
 }
 
 static TREE: Lazy<Node> = Lazy::new(|| {
@@ -81,9 +81,9 @@ fn row2value(line: &str) -> u32 {
 
 fn part2(input: &str) -> u32 {
     let lines = input.lines();
-    let values = lines.map(|line| row2value(line));
-    let res = values.sum();
-    res
+    let values = lines.map(row2value);
+    
+    values.sum()
 }
 
 fn main() {
