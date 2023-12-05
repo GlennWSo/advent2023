@@ -65,7 +65,7 @@ impl Node {
     pub fn is_leaf(&self) -> bool {
         self.value.is_some()
     }
-    pub fn new_tree<'a>(words: impl IntoIterator<Item = (&'a str, u8)>) -> Self {
+    fn new_tree<'a>(words: impl IntoIterator<Item = (&'a str, u8)>) -> Self {
         let mut root = Node::default();
         for (word, value) in words {
             root.insert(word.chars(), value)
@@ -91,7 +91,7 @@ impl Node {
         };
     }
 
-    pub fn find(&self, c: char) -> Find {
+    fn find(&self, c: char) -> Find {
         let nodes: Vec<_> = self
             .nodes
             .iter()
@@ -193,8 +193,7 @@ impl Tree {
                 self.partial.push_back(c);
                 // dbg!(&self.partial);
                 let chars: Vec<_> = self.partial.drain(..).collect();
-                &chars;
-                
+
                 // dbg!(&self.partial);
                 chars.into_iter().find_map(|c| self.decend(c))
             }
@@ -264,8 +263,5 @@ mod tests {
             }
         }
         assert_eq!(expected, res.unwrap());
-
-        // let res: Vec<_> = chars.filter_map(|c| tree.decend(c)).collect();
-        // assert_eq!(expected, res);
     }
 }

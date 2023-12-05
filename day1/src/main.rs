@@ -1,5 +1,4 @@
-use day1::{Find, Node, Tree};
-use once_cell::sync::Lazy;
+use day1::Tree;
 
 fn simple_row2value(line: &str) -> u32 {
     let mut numbers = line.chars().filter(|c| c.is_ascii_digit());
@@ -18,23 +17,6 @@ fn part1(input: &str) -> u32 {
     values.sum()
 }
 
-static TREE: Lazy<Node> = Lazy::new(|| {
-    let words = [
-        "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
-    ];
-    Node::new_tree(words.into_iter().zip(1..10))
-});
-
-static REV_TREE: Lazy<Node> = Lazy::new(|| {
-    let words = [
-        "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
-    ];
-    let reverse: [String; 9] = words.map(|word| word.chars().rev().collect());
-    let reverse = reverse.iter().map(|word| (word.as_str()));
-    
-    Node::new_tree(reverse.zip(1..10))
-});
-
 fn find_digit(chars: &mut impl Iterator<Item = char>, tree: &mut Tree) -> Option<u32> {
     chars.find_map(|c| match c.to_digit(10) {
         Some(v) => Some(v),
@@ -42,17 +24,6 @@ fn find_digit(chars: &mut impl Iterator<Item = char>, tree: &mut Tree) -> Option
     })
 }
 
-fn decend<'a>(node: &'a Node, c: char, root: &'a Node) -> Find {
-    match node.find(c) {
-        a @ Find::Complete(_) | a @ Find::Partial(_) => a,
-        Find::NoMatch => {
-            if node.is_root() {
-                return Find::NoMatch;
-            }
-            decend(root, c, root)
-        }
-    }
-}
 fn row2value(line: &str, tree: &mut Tree, rev_tree: &mut Tree) -> u32 {
     let mut chars = line.chars();
     let first = find_digit(&mut chars, tree).expect("each line should have atleast one value");
@@ -152,21 +123,6 @@ mod tests {
             let res_back = find_digit(&mut row.chars().rev(), &mut rev_tree).unwrap();
             assert_eq!(exp_back, res_back, "row is {row}");
         }
-    }
-    fn other(input: &str) -> u32 {
-        input
-            .lines()
-            .map(|line| {
-                let mut chars = line.chars();
-
-                let first = find_first(&mut chars);
-
-                chars = line.chars();
-                let last = find_last(chars);
-
-                first * 10 + last
-            })
-            .sum::<u32>()
     }
 
     fn find_last(mut chars: std::str::Chars<'_>) -> u32 {
