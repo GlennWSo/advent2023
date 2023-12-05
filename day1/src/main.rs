@@ -31,8 +31,8 @@ static REV_TREE: Lazy<Node> = Lazy::new(|| {
     ];
     let reverse: [String; 9] = words.map(|word| word.chars().rev().collect());
     let reverse = reverse.iter().map(|word| (word.as_str()));
-    let tree = Node::new_tree(reverse.zip(1..10));
-    tree
+    
+    Node::new_tree(reverse.zip(1..10))
 });
 
 fn find_digit(chars: &mut impl Iterator<Item = char>, tree: &mut Tree) -> Option<u32> {
@@ -85,7 +85,7 @@ fn main() {
 mod tests {
     use day1::Tree;
 
-    use crate::{find_digit, part1, row2value, REV_TREE, TREE};
+    use crate::{find_digit, part1, row2value};
 
     #[test]
     fn test1() {

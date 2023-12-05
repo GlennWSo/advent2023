@@ -95,7 +95,7 @@ impl Node {
         let nodes: Vec<_> = self
             .nodes
             .iter()
-            .filter_map(|node| match (node.char == c) {
+            .filter_map(|node| match node.char == c {
                 true => Some(node.clone()),
                 false => None,
             })
@@ -118,9 +118,9 @@ fn find<'a>(c: char, nodes: impl Iterator<Item = &'a Node>) -> Find {
     let mut finds = nodes.map(|node| node.find(c));
     let mut nodes: Vec<Node> = Vec::new();
     if let Some(v) = finds.find(|res| match res {
-        Find::Complete(v) => true,
+        Find::Complete(_v) => true,
         Find::Partial(inners) => {
-            nodes.extend(inners.iter().map(|node| node.clone()));
+            nodes.extend(inners.iter().cloned());
             false
         }
         _ => false,
@@ -167,7 +167,7 @@ impl Tree {
         self.current.clear();
         self.partial.clear();
     }
-    pub fn decend<'a>(&'a mut self, c: char) -> Option<u8> {
+    pub fn decend(&mut self, c: char) -> Option<u8> {
         if self.current.is_empty() {
             self.current.push(self.root.clone());
         }
@@ -177,12 +177,12 @@ impl Tree {
         match find {
             Find::Complete(v) => {
                 self.reset();
-                return Some(v);
+                Some(v)
             }
             Find::Partial(inner_nodes) => {
                 self.partial.push_back(c);
                 self.current = inner_nodes;
-                return None;
+                None
             }
             Find::NoMatch => {
                 if self.partial.is_empty() {
@@ -193,10 +193,10 @@ impl Tree {
                 self.partial.push_back(c);
                 // dbg!(&self.partial);
                 let chars: Vec<_> = self.partial.drain(..).collect();
-                dbg!(&chars);
-                let res = chars.into_iter().find_map(|c| self.decend(c));
+                &chars;
+                
                 // dbg!(&self.partial);
-                res
+                chars.into_iter().find_map(|c| self.decend(c))
             }
         }
     }
