@@ -1,4 +1,4 @@
-use day1::{Find, Node};
+use day1::{Find, Node, Tree};
 use once_cell::sync::Lazy;
 
 fn simple_row2value(line: &str) -> u32 {
@@ -35,23 +35,15 @@ static REV_TREE: Lazy<Node> = Lazy::new(|| {
     tree
 });
 
-fn find_digit(chars: &mut impl Iterator<Item = char>, tree: &Node) -> Option<u32> {
-    let mut node: &Node = tree;
-    for c in chars {
-        if let Some(v) = c.to_digit(10) {
-            return Some(v);
-        };
-        match decend(node, c, tree) {
-            Find::Complete(v) => return Some(v as u32),
-            Find::Partial(inner_node) => node = inner_node,
-            Find::NoMatch => node = tree,
-        }
-    }
-    None
+fn find_digit(chars: &mut impl Iterator<Item = char>, tree: &mut Tree) -> Option<u32> {
+    chars.find_map(|c| match c.to_digit(10) {
+        Some(v) => Some(v),
+        None => tree.decend(c).map(|v| v as u32),
+    })
 }
 
-fn decend<'a>(node: &'a Node, c: char, root: &'a Node) -> Find<'a> {
-    match node.decend(c) {
+fn decend<'a>(node: &'a Node, c: char, root: &'a Node) -> Find {
+    match node.find(c) {
         a @ Find::Complete(_) | a @ Find::Partial(_) => a,
         Find::NoMatch => {
             if node.is_root() {
@@ -61,11 +53,11 @@ fn decend<'a>(node: &'a Node, c: char, root: &'a Node) -> Find<'a> {
         }
     }
 }
-fn row2value(line: &str) -> u32 {
+fn row2value(line: &str, tree: &mut Tree, rev_tree: &mut Tree) -> u32 {
     let mut chars = line.chars();
-    let first = find_digit(&mut chars, &TREE).expect("each line should have atleast one value");
+    let first = find_digit(&mut chars, tree).expect("each line should have atleast one value");
     let mut rev = chars.rev();
-    let find = find_digit(&mut rev, &REV_TREE);
+    let find = find_digit(&mut rev, rev_tree);
     let last = match find {
         Some(v) => v,
         None => first,
@@ -76,7 +68,9 @@ fn row2value(line: &str) -> u32 {
 
 fn part2(input: &str) -> u32 {
     let lines = input.lines();
-    let values = lines.map(row2value);
+    let mut tree = Tree::digits();
+    let mut rev_tree = Tree::rev_digits();
+    let values = lines.map(|row| row2value(row, &mut tree, &mut rev_tree));
 
     values.sum()
 }
@@ -89,6 +83,8 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
+    use day1::Tree;
+
     use crate::{find_digit, part1, row2value, REV_TREE, TREE};
 
     #[test]
@@ -103,16 +99,22 @@ mod tests {
     fn test2() {
         let input = "two1ninez\neightwothree\nabcone2threexyz\nxtwone3four\n4nineeightseven2\nzoneight234\n7pqrstsixteen\n";
         let expected = vec![29, 83, 13, 24, 42, 14, 76];
-        let res = input.lines().map(row2value);
+        let mut tree = Tree::digits();
+        let mut rev_tree = Tree::rev_digits();
+        let res = input
+            .lines()
+            .map(|row| row2value(row, &mut tree, &mut rev_tree));
         for (exp, res) in res.zip(expected) {
             assert_eq!(exp, res);
         }
     }
     #[test]
     fn test3() {
-        let input = "1321";
-        let expected: u32 = 11;
-        let res = row2value(input);
+        let input = "3onen";
+        let expected: u32 = 31;
+        let mut tree = Tree::digits();
+        let mut rev_tree = Tree::rev_digits();
+        let res = row2value(input, &mut tree, &mut rev_tree);
         assert_eq!(expected, res);
     }
     const NUMBERS: [&str; 9] = [
@@ -136,16 +138,74 @@ mod tests {
         }
         None
     }
+    #[test]
     fn test5() {
         let input = include_str!("input.txt");
+        let mut tree = Tree::digits();
+        let mut rev_tree = Tree::rev_digits();
         for row in input.lines() {
-            let exp_front = parse_digit_start(row);
-            let res_front = find_digit(&mut row.chars(), &TREE);
-            assert_eq!(exp_front, res_front);
+            let exp_front = find_first(&mut row.chars());
+            let res_front = find_digit(&mut row.chars(), &mut tree).unwrap();
+            assert_eq!(exp_front, res_front, "row is {row}");
 
-            let exp_back = parse_digit_end(row);
-            let res_back = find_digit(&mut row.chars().rev(), &REV_TREE);
-            assert_eq!(exp_back, res_back);
+            let exp_back = find_last(row.chars());
+            let res_back = find_digit(&mut row.chars().rev(), &mut rev_tree).unwrap();
+            assert_eq!(exp_back, res_back, "row is {row}");
         }
+    }
+    fn other(input: &str) -> u32 {
+        input
+            .lines()
+            .map(|line| {
+                let mut chars = line.chars();
+
+                let first = find_first(&mut chars);
+
+                chars = line.chars();
+                let last = find_last(chars);
+
+                first * 10 + last
+            })
+            .sum::<u32>()
+    }
+
+    fn find_last(mut chars: std::str::Chars<'_>) -> u32 {
+        let mut last = 0;
+        loop {
+            if let Some(o) = parse_digit_end(chars.as_str()) {
+                last = o;
+                break;
+            }
+
+            if let Some(ch) = chars.next_back() {
+                if ch.is_ascii_digit() {
+                    last = ch.to_digit(10).unwrap();
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+        last
+    }
+
+    fn find_first(chars: &mut std::str::Chars<'_>) -> u32 {
+        let mut first = 0;
+        loop {
+            if let Some(o) = parse_digit_start(chars.as_str()) {
+                first = o;
+                break;
+            }
+
+            if let Some(ch) = chars.next() {
+                if ch.is_ascii_digit() {
+                    first = ch.to_digit(10).unwrap();
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+        first
     }
 }
