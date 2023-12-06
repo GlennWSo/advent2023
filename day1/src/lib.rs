@@ -1,5 +1,7 @@
 use std::{char, collections::VecDeque, fmt::Display, iter};
 
+// FIXME expensive cloning
+
 #[derive(Debug, Clone)]
 pub struct Node {
     char: char,
